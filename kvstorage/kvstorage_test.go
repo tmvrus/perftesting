@@ -23,6 +23,7 @@ func BenchmarkShardedStorage(b *testing.B) {
 	wg := &sync.WaitGroup{}
 	wg.Add(b.N)
 	wg.Add(b.N)
+	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		go func(i int) {
 			for j := 0; j <= 100; j++ {
@@ -51,6 +52,7 @@ func BenchmarkSingleStorage(b *testing.B) {
 	wg := &sync.WaitGroup{}
 	wg.Add(b.N)
 	wg.Add(b.N)
+	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		go func(i int) {
 			for j := 0; j <= 100; j++ {
@@ -80,6 +82,7 @@ func BenchmarkSyncMap(b *testing.B) {
 	wg := &sync.WaitGroup{}
 	wg.Add(b.N)
 	wg.Add(b.N)
+	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		go func(i int) {
 			for j := 0; j <= 100; j++ {
@@ -104,11 +107,47 @@ func BenchmarkSyncMap(b *testing.B) {
 
 }
 
+func BenchmarkRefStorage(b *testing.B) {
+	data := map[int]*int{}
+	for i := 0; i < 100; i++ {
+		data[i] = new(int)
+	}
+
+	var wg sync.WaitGroup
+
+	wg.Add(b.N)
+	wg.Add(b.N)
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		go func(i int) {
+			for j := 0; j < 100; j++ {
+				_ = data[j]
+				*data[j] = j + i
+			}
+
+			wg.Done()
+		}(i)
+
+		go func() {
+			for j := 0; j < 100; j++ {
+				_ = data[j]
+				*data[j] = j + j
+
+			}
+
+			wg.Done()
+		}()
+	}
+
+	wg.Wait()
+}
+
 func BenchmarkShardedSyncMap(b *testing.B) {
 	s := NewShardedSyncMap()
 	wg := &sync.WaitGroup{}
 	wg.Add(b.N)
 	wg.Add(b.N)
+	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		go func(i int) {
 			for j := 0; j <= 100; j++ {
